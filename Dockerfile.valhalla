@@ -1,0 +1,7 @@
+ARG VALHALLA_VERSION=3.7.0
+FROM ghcr.io/valhalla/valhalla-scripted:${VALHALLA_VERSION}
+
+# The scripted image downloads an OSM PBF, builds the routing graph, and starts
+# valhalla_service. Its generated files are persisted by docker-compose.yml.
+EXPOSE 8002
+

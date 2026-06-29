@@ -6,6 +6,13 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "routing:up": "./scripts/routing-stack.sh up",
+    "routing:down": "./scripts/routing-stack.sh down",
+    "routing:logs": "./scripts/routing-stack.sh logs",
+    "routing:status": "./scripts/routing-stack.sh status",
+    "routing:test": "./scripts/routing-stack.sh test",
+    "routing:rebuild": "./scripts/routing-stack.sh rebuild",
+    "routing:reset": "./scripts/routing-stack.sh reset",
     "test:tracking": "node scripts/runTrackingSimulationTest.js",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit"

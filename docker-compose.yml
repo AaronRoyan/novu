@@ -1,0 +1,33 @@
+services:
+  valhalla:
+    build:
+      context: .
+      dockerfile: Dockerfile.valhalla
+      args:
+        VALHALLA_VERSION: ${VALHALLA_VERSION:-3.7.0}
+    image: novu-valhalla:${VALHALLA_VERSION:-3.7.0}
+    restart: unless-stopped
+    ports:
+      - "${VALHALLA_PORT:-8002}:8002"
+    environment:
+      # The first start downloads this OpenStreetMap extract and builds tiles.
+      tile_urls: ${OSM_PBF_URL:-https://download.geofabrik.de/europe/andorra-latest.osm.pbf}
+      use_tiles_ignore_pbf: "True"
+      force_rebuild: ${VALHALLA_FORCE_REBUILD:-False}
+      build_admins: ${VALHALLA_BUILD_ADMINS:-True}
+      build_time_zones: ${VALHALLA_BUILD_TIME_ZONES:-True}
+      build_elevation: ${VALHALLA_BUILD_ELEVATION:-False}
+      build_tar: "True"
+      serve_tiles: "True"
+      server_threads: ${VALHALLA_THREADS:-2}
+    volumes:
+      - valhalla-data:/custom_files
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:8002/status"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 5m
+
+volumes:
+  valhalla-data:
