@@ -1,0 +1,71 @@
+.section {
+  --p: 0;
+  position: relative;
+  min-height: 180vh;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: clamp(2rem, 4vw, 3.5rem);
+  min-height: 100vh;
+  padding-block: calc(var(--nav-h) + 2rem) 3rem;
+}
+
+.eyebrow {
+  display: grid;
+  gap: 1rem;
+}
+
+.text {
+  max-width: 22ch;
+  font-size: clamp(2rem, 4.4vw + 0.75rem, 5.25rem);
+  font-weight: 560;
+  font-stretch: 88%;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+}
+
+.line {
+  display: block;
+}
+
+.word {
+  /* Each word fades from dim to full, and settles into place, as progress passes it. */
+  --lit: clamp(0, calc(var(--p, 0) * (var(--n) + 3) - var(--i)), 1);
+  display: inline-block;
+  opacity: max(0.14, var(--lit));
+  transform: translateY(calc((1 - var(--lit)) * 0.18em));
+  transition:
+    opacity 0.2s linear,
+    transform 0.3s var(--ease-out),
+    color 0.6s var(--ease);
+}
+
+.line[data-accent] .word {
+  color: color-mix(
+    in srgb,
+    var(--accent) calc(clamp(0, (var(--p) * (var(--n) + 4) - var(--i)), 1) * 100%),
+    var(--ink)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .section {
+    min-height: auto;
+  }
+
+  .sticky {
+    position: static;
+    min-height: auto;
+    padding-block: 6rem;
+  }
+
+  .word {
+    opacity: 1;
+    transform: none;
+  }
+}

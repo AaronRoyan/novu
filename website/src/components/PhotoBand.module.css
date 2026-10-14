@@ -1,0 +1,47 @@
+.band {
+  --hide: clamp(0, calc(1 - var(--p, 1) * 2.4), 1);
+  scale: calc(1 - var(--hide) * 0.1);
+  will-change: scale;
+  position: relative;
+  display: grid;
+  align-items: end;
+  min-height: clamp(26rem, 62vw, 50rem);
+  margin-block: clamp(4rem, 7vw, 7rem);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.media {
+  position: absolute;
+  inset: -12% 0;
+  z-index: -2;
+  transform: translate3d(0, calc((var(--p, 0.5) - 0.5) * 18%), 0) scale(calc(1 + var(--hide) * 0.12));
+  will-change: transform;
+}
+
+.image {
+  object-fit: cover;
+}
+
+.band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgb(11 11 12 / 0.55) 0%, transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, transparent 25%, transparent 45%, rgb(11 11 12 / 0.9) 100%);
+}
+
+.caption {
+  translate: calc((var(--p, 0.5) - 0.5) * -8%) 0;
+  will-change: translate;
+  color: var(--ink);
+  display: grid;
+  gap: 1rem;
+  padding-bottom: clamp(2rem, 4vw, 4rem);
+}
+
+.caption :global(.label) {
+  color: var(--ink-2);
+}

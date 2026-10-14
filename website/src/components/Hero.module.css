@@ -1,0 +1,466 @@
+/*
+ * Pinned 3D hero. `--p` (0 → 1, scroll through the pin) comes from ScrollFx;
+ * `--mx` / `--my` (pointer, -0.5 → 0.5) come from HeroScene. Each layer has a
+ * `--depth` for the pointer and a `--fall` for scroll.
+ *
+ * Keep per-frame changes to transform / translate / opacity on layers marked
+ * `will-change`; anything else (colors, filters, clip-path) repaints every frame.
+ */
+
+.hero {
+  position: relative;
+  height: 190svh;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+  background: #05060b;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.scene::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(140% 90% at 50% 40%, transparent 55%, rgb(0 0 0 / 0.55) 100%),
+    linear-gradient(180deg, rgb(5 6 11 / 0.65) 0%, transparent 22%, transparent 82%, var(--bg) 100%);
+}
+
+.defs {
+  position: absolute;
+}
+
+/* ---------- Sky ---------- */
+
+.sky,
+.dawn {
+  position: absolute;
+  inset: 0;
+}
+
+.sky {
+  background: linear-gradient(180deg, #05060b 0%, #0c0c19 30%, #1b1428 52%, #3a2030 64%, #2a1a26 100%);
+}
+
+.dawn {
+  background: linear-gradient(180deg, #0e0b16 0%, #2a1a2c 26%, #7a3a35 46%, #e0743c 60%, #ffb070 68%, #8a4a3a 100%);
+  opacity: calc(0.12 + var(--p, 0) * 0.88);
+  will-change: opacity;
+}
+
+.stars {
+  position: absolute;
+  inset: 0;
+  opacity: calc(1 - var(--p, 0) * 1.5);
+  will-change: opacity;
+}
+
+/* Each <i> is a 1px dot whose box-shadows draw one field of stars. */
+.stars i {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  border-radius: 50%;
+  animation: twinkle 5s ease-in-out infinite;
+}
+
+.stars i:nth-child(2) {
+  animation-duration: 7s;
+  animation-delay: -2s;
+}
+
+.stars i:nth-child(3) {
+  animation-duration: 9s;
+  animation-delay: -5s;
+}
+
+@keyframes twinkle {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* ---------- Stage: a 16:9 frame that covers the viewport, anchored low ---------- */
+
+.stage {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: max(100%, calc(100svh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  translate: -50% 0;
+  container-type: inline-size;
+}
+
+.layer,
+.front {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  transform: translate3d(
+    calc(var(--mx, 0) * var(--depth) * -5cqw),
+    calc(var(--my, 0) * var(--depth) * -2.5cqw + var(--p, 0) * var(--fall)),
+    0
+  );
+  will-change: transform;
+}
+
+.far {
+  --fall: 2cqw;
+}
+
+.mid {
+  --fall: 5cqw;
+}
+
+.near {
+  --fall: 9cqw;
+}
+
+.front {
+  --fall: 15cqw;
+}
+
+.front::after {
+  content: '';
+  position: absolute;
+  inset: 99.5% 0 -12%;
+  background: #060607;
+}
+
+.frontImage {
+  object-fit: fill;
+}
+
+/* Ridge colors are fixed (pre-dawn violet); .warmth fades the sunrise in over them. */
+.farTop {
+  stop-color: #3b3346;
+}
+
+.farBottom {
+  stop-color: #221d2b;
+}
+
+.midTop {
+  stop-color: #272131;
+}
+
+.midBottom {
+  stop-color: #16131c;
+}
+
+.nearTop {
+  stop-color: #18151e;
+}
+
+.nearBottom {
+  stop-color: #0d0b10;
+}
+
+/* Sunrise light falling on the ridges (but not the runner, who sits in front). */
+.warmth {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(55% 45% at 74% 36%, rgb(255 150 90 / 0.5), rgb(240 90 36 / 0.22) 45%, transparent 75%),
+    linear-gradient(180deg, transparent 25%, rgb(160 70 50 / 0.28) 55%, transparent 85%);
+  /* Never fully 0: an invisible layer isn't drawn until it appears, which
+     would make the first scroll stutter while it is drawn. */
+  opacity: max(0.02, var(--p, 0));
+  will-change: opacity;
+}
+
+/* ---------- Sun ---------- */
+
+.sun,
+.sunGlow {
+  position: absolute;
+  left: 74%;
+  top: 52%;
+  border-radius: 50%;
+  translate: -50% calc(-50% - var(--p, 0) * 17cqw);
+  will-change: translate;
+}
+
+.sun {
+  width: 13cqw;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, #fff6e4 0 32%, #ffc884 50%, #f6863c 66%, rgb(240 90 36 / 0) 72%);
+}
+
+.sunGlow {
+  width: 80cqw;
+  aspect-ratio: 1;
+  background: radial-gradient(circle, rgb(255 168 96 / 0.55), rgb(240 90 36 / 0.2) 30%, transparent 62%);
+  opacity: calc(0.35 + var(--p, 0) * 0.65);
+  will-change: translate, opacity;
+}
+
+/* ---------- Wordmark, set between the far peak and the nearer ranges ---------- */
+
+.wordmark {
+  position: absolute;
+  left: 50%;
+  bottom: 50.5%;
+  translate: -50% 0;
+  font-family: var(--font-wordmark), sans-serif;
+  font-size: min(21cqw, 22vw);
+  font-weight: 600;
+  line-height: 0.74;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #f7f2e8 25%, #e9c9a8 75%, #c98a62 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  transform: translate3d(calc(var(--mx, 0) * -2.2cqw), calc(var(--my, 0) * -1cqw - var(--p, 0) * 7cqw), 0);
+  will-change: transform;
+  animation: wordmark-in 1.8s var(--ease-out) 0.2s both;
+}
+
+@keyframes wordmark-in {
+  from {
+    opacity: 0;
+    translate: -50% 18%;
+  }
+}
+
+/* ---------- Mist ---------- */
+
+.mist {
+  position: absolute;
+  left: -15%;
+  right: -15%;
+  height: 16%;
+  background: radial-gradient(50% 50% at 50% 50%, rgb(214 198 220 / 0.16), transparent 72%);
+  animation: drift 28s ease-in-out infinite alternate;
+  transform: translateY(calc(var(--p, 0) * 4cqw));
+  will-change: transform;
+}
+
+.mistBack {
+  top: 36%;
+}
+
+.mistFront {
+  top: 49%;
+  animation-duration: 36s;
+  animation-direction: alternate-reverse;
+}
+
+@keyframes drift {
+  from {
+    translate: -5% 0;
+  }
+  to {
+    translate: 5% 0;
+  }
+}
+
+.grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Copy over the scene ---------- */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  padding-top: calc(var(--nav-h) + 1rem);
+  opacity: clamp(0, calc(1 - (var(--p, 0) - 0.4) * 3), 1);
+  translate: 0 calc(var(--p, 0) * -8vh);
+  will-change: opacity, translate;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  animation: fade 1.2s var(--ease-out) 0.8s both;
+}
+
+.top :global(.label) {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--ink-2);
+}
+
+.bottom {
+  grid-row: 3;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 27rem);
+  gap: 2rem 4rem;
+  align-items: end;
+  padding-bottom: clamp(1.25rem, 2.5vw, 2.25rem);
+}
+
+.builtFor {
+  animation: rise 1.2s var(--ease-out) 0.6s both;
+}
+
+.builtLabel {
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.25rem, 1.2vw + 0.85rem, 2rem);
+  line-height: 1;
+  color: var(--ink-2);
+}
+
+.title {
+  font-size: clamp(2.5rem, 5vw + 0.6rem, 6.25rem);
+}
+
+.rotator {
+  display: grid;
+  overflow: hidden;
+  padding-bottom: 0.06em;
+  color: var(--accent);
+}
+
+.phrase {
+  grid-area: 1 / 1;
+  align-self: end;
+  transition:
+    transform 0.9s var(--ease),
+    opacity 0.9s var(--ease);
+}
+
+.phrase[data-state='idle'] {
+  transform: translateY(105%);
+  opacity: 0;
+  transition: none;
+}
+
+.phrase[data-state='out'] {
+  transform: translateY(-105%);
+  opacity: 0;
+  transition:
+    transform 0.9s var(--ease),
+    opacity 0.45s var(--ease);
+}
+
+.side {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+  animation: rise 1.2s var(--ease-out) 0.8s both;
+}
+
+.inspired {
+  font-size: clamp(1.5rem, 1.5vw + 0.9rem, 2.35rem);
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.kannada {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.3em;
+}
+
+.lead {
+  font-size: var(--fs-lead);
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.bar {
+  grid-row: 4;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-block: 1rem 1.25rem;
+  border-top: 1px dashed var(--line);
+  animation: fade 1.2s var(--ease-out) 1s both;
+}
+
+.bar :global(.label) {
+  color: var(--ink-2);
+}
+
+.scrollLine {
+  position: relative;
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.scrollLine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--p, 0));
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem);
+  }
+}
+
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 860px) {
+  .hero {
+    height: 165svh;
+  }
+
+  .bottom {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .top :global(.label):last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero {
+    height: 100svh;
+  }
+
+  .sticky {
+    position: relative;
+  }
+}

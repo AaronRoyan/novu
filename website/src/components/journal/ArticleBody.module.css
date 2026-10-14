@@ -1,0 +1,93 @@
+.body {
+  padding-block: clamp(3rem, 7vw, 6rem);
+}
+
+.column {
+  display: grid;
+  gap: 1.6em;
+  width: min(100% - 2 * var(--gutter), 42rem);
+  margin-inline: auto;
+  font-size: clamp(1.125rem, 0.35vw + 1rem, 1.35rem);
+}
+
+.line {
+  display: block;
+}
+
+.p {
+  line-height: 1.65;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+
+.p strong,
+.quote strong {
+  color: var(--ink);
+  font-weight: 650;
+}
+
+.lead {
+  font-size: clamp(1.45rem, 1vw + 1.1rem, 2rem);
+  line-height: 1.35;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.quote {
+  position: relative;
+  margin-block: 0.6em;
+  padding-left: clamp(1.25rem, 3vw, 2rem);
+  border-left: 2px solid var(--accent);
+  font-size: clamp(1.5rem, 1.4vw + 1rem, 2.25rem);
+  font-weight: 550;
+  font-stretch: 90%;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.quote .line + .line {
+  margin-top: 0.35em;
+}
+
+.quiet {
+  font-size: 0.6em;
+  font-weight: 400;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+
+.statement {
+  margin-block: 0.4em;
+  font-size: clamp(2.25rem, 3vw + 1.25rem, 4rem);
+  font-weight: 640;
+  font-stretch: 78%;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.statement .line {
+  display: block;
+}
+
+.statement[data-accent] .line:last-child {
+  color: var(--accent);
+}
+
+.closing {
+  margin-top: 1em;
+  padding-top: 1.25em;
+  border-top: 1px dashed var(--line-strong);
+  font-size: clamp(2rem, 2.4vw + 1.25rem, 3.5rem);
+  font-weight: 640;
+  font-stretch: 80%;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+  text-wrap: balance;
+}

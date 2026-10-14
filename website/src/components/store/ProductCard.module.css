@@ -1,0 +1,263 @@
+.card {
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
+}
+
+.media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  border-radius: var(--radius);
+  overflow: hidden;
+  isolation: isolate;
+  background: var(--bg-3);
+  transition:
+    transform 0.8s var(--ease),
+    border-radius 0.8s var(--ease);
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  transition:
+    opacity 0.7s var(--ease),
+    transform 1.2s var(--ease);
+}
+
+.image[data-fit='cover'] {
+  object-fit: cover;
+}
+
+.image[data-fit='contain'] {
+  object-fit: contain;
+  padding: 10%;
+}
+
+.hover {
+  opacity: 0;
+  transform: scale(1.08);
+}
+
+.code {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.4rem;
+  z-index: 2;
+  font-size: clamp(4rem, 8vw, 8rem);
+  line-height: 0.8;
+  color: transparent;
+  -webkit-text-stroke: 1.5px #fff;
+  mix-blend-mode: difference;
+  opacity: 0.7;
+  transition: transform 0.8s var(--ease);
+}
+
+.badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: rgb(11 11 12 / 0.8);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+
+.cue {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 2;
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-family: var(--font-mono), monospace;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0;
+  transform: translateY(0.75rem);
+  transition:
+    opacity 0.5s var(--ease),
+    transform 0.6s var(--ease);
+}
+
+@media (hover: hover) {
+  .media:hover {
+    transform: scale(0.985);
+    border-radius: calc(var(--radius) * 2);
+  }
+
+  .media:hover .hover {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  /* Hide the first photo too, once covered, so its edge can't peek out. */
+  .media:hover:has(.hover) .layer:not(.hover) {
+    opacity: 0;
+    transition-delay: 0.3s;
+  }
+
+  .media:hover .code {
+    transform: translateY(-0.4rem);
+  }
+
+  .media:hover .cue {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.media:focus-visible .cue {
+  opacity: 1;
+  transform: none;
+}
+
+.body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+}
+
+.name {
+  font-size: clamp(1.35rem, 1vw + 1rem, 1.85rem);
+  font-weight: 600;
+  font-stretch: 85%;
+  letter-spacing: -0.015em;
+  line-height: 1.1;
+}
+
+.name a {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  font-family: var(--font-mono), monospace;
+  font-size: 0.9rem;
+}
+
+.price s {
+  color: var(--ink-3);
+}
+
+.off {
+  color: var(--accent);
+}
+
+.tagline {
+  color: var(--ink-2);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.swatches {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.swatches i {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.25);
+}
+
+/* ---------- App tile ---------- */
+
+.appMedia {
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 90% at 50% 110%, #7a3a35, #2a1a2c 45%, #0e0b16 75%);
+}
+
+.appGlow {
+  position: absolute;
+  left: 50%;
+  bottom: -18%;
+  width: 70%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  translate: -50% 0;
+  background: radial-gradient(circle, #fff1d6 0 18%, #ffb36b 34%, rgb(240 90 36 / 0.5) 48%, transparent 68%);
+  animation: sunrise 6s ease-in-out infinite alternate;
+}
+
+.appRings {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.appRings i {
+  position: absolute;
+  aspect-ratio: 1;
+  border: 1px dashed rgb(237 234 227 / 0.22);
+  border-radius: 50%;
+  animation: spin 40s linear infinite;
+}
+
+.appRings i:nth-child(1) {
+  width: 46%;
+}
+
+.appRings i:nth-child(2) {
+  width: 72%;
+  animation-direction: reverse;
+  animation-duration: 60s;
+}
+
+.appRings i:nth-child(3) {
+  width: 98%;
+  animation-duration: 80s;
+}
+
+.appWord {
+  position: relative;
+  font-size: clamp(5rem, 10vw, 9rem);
+  color: var(--ink);
+  mix-blend-mode: overlay;
+}
+
+@keyframes sunrise {
+  to {
+    translate: -50% -12%;
+  }
+}
+
+@keyframes spin {
+  to {
+    rotate: 360deg;
+  }
+}
