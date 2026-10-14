@@ -1,3 +1,6 @@
+# Pinned so the Docker volume name does not depend on the folder name.
+name: novu
+
 services:
   valhalla:
     build:
