@@ -1,0 +1,71 @@
+.medal {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(3rem, 6vw, 7rem);
+  align-items: center;
+}
+
+/* The medal turns a little as it passes through the screen. */
+.medalSpin {
+  transform: perspective(1400px) rotateY(calc((var(--p, 0.5) - 0.5) * -56deg))
+    rotateZ(calc((var(--p, 0.5) - 0.5) * 8deg));
+  will-change: transform;
+}
+
+.medalCopy {
+  display: grid;
+  gap: 1.5rem;
+  max-width: 34rem;
+}
+
+.gear {
+  border-top: 1px dashed var(--line);
+}
+
+.gearHead {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 2rem clamp(2rem, 5vw, 6rem);
+  align-items: end;
+  margin-bottom: clamp(2rem, 5vw, 5rem);
+}
+
+.gearTitle {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.gearAside {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+}
+
+.journal {
+  border-top: 1px dashed var(--line);
+}
+
+.journalHead {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: 2rem clamp(2rem, 5vw, 6rem);
+  align-items: end;
+  margin-bottom: clamp(3rem, 6vw, 5rem);
+}
+
+.bandText {
+  max-width: 10ch;
+  font-size: var(--fs-h2);
+}
+
+.reelHead {
+  max-width: 48rem;
+}
+
+@media (max-width: 960px) {
+  .medal,
+  .gearHead,
+  .journalHead {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

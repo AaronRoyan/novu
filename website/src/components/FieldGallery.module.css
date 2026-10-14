@@ -1,0 +1,190 @@
+.gallery {
+  position: relative;
+  height: calc(100vh + var(--dist, 0px));
+  border-top: 1px dashed var(--line);
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.track {
+  display: flex;
+  align-items: center;
+  gap: clamp(1rem, 2vw, 2rem);
+  width: max-content;
+  padding-inline: var(--gutter);
+  transform: translate3d(calc(var(--p, 0) * var(--dist, 0px) * -1), 0, 0);
+  will-change: transform;
+}
+
+.intro {
+  display: grid;
+  gap: 1.25rem;
+  align-content: center;
+  width: min(34rem, 80vw);
+  padding-right: clamp(1rem, 4vw, 4rem);
+}
+
+.card {
+  position: relative;
+  flex: none;
+  /* Cards lean back in as they travel, so the strip feels like it has depth. */
+  --lean: calc((var(--p, 0) * 8 - var(--i)) * 1deg);
+  transform: perspective(1200px) rotateY(clamp(-10deg, var(--lean), 10deg));
+  will-change: transform;
+}
+
+.card[data-shape='tall'] {
+  height: min(68vh, 44rem);
+  aspect-ratio: 9 / 16;
+}
+
+.card[data-kind='image'][data-shape='tall'] {
+  aspect-ratio: 3 / 4;
+}
+
+.card[data-shape='wide'] {
+  height: min(52vh, 34rem);
+  aspect-ratio: 16 / 10;
+}
+
+.card:nth-child(odd) {
+  margin-top: clamp(2rem, 8vh, 6rem);
+}
+
+.frame {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--bg-3);
+}
+
+.media {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  scale: 1.12;
+  /* Inner parallax: the picture slides against its frame as the strip moves. */
+  translate: calc((var(--p, 0) * 8 - var(--i)) * -1.2%) 0;
+  will-change: translate;
+}
+
+.caption {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 2.5rem 1rem 1rem;
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: linear-gradient(transparent, rgb(0 0 0 / 0.6));
+  font-family: var(--font-mono), monospace;
+  font-size: var(--fs-label);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.progress {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: clamp(1.5rem, 4vh, 3rem);
+  height: 1px;
+  background: var(--line);
+}
+
+.progress span {
+  position: absolute;
+  inset: 0;
+  background: var(--accent);
+  transform-origin: 0 50%;
+  transform: scaleX(var(--p, 0));
+}
+
+@media (max-width: 860px) {
+  .gallery {
+    height: auto;
+    padding-block: clamp(4rem, 12vw, 6rem);
+  }
+
+  .sticky {
+    position: static;
+    height: auto;
+    overflow: visible;
+  }
+
+  .track {
+    width: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    transform: none;
+    align-items: stretch;
+  }
+
+  .track::-webkit-scrollbar {
+    display: none;
+  }
+
+  .intro {
+    width: 80vw;
+    scroll-snap-align: start;
+  }
+
+  .card {
+    transform: none;
+    scroll-snap-align: center;
+  }
+
+  .card[data-shape='tall'] {
+    height: auto;
+    width: min(68vw, 18rem);
+  }
+
+  .card[data-shape='wide'] {
+    height: auto;
+    width: 82vw;
+  }
+
+  .card:nth-child(odd) {
+    margin-top: 0;
+  }
+
+  .media {
+    translate: none;
+  }
+
+  .progress {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gallery {
+    height: auto;
+  }
+
+  .sticky {
+    position: static;
+    height: auto;
+    padding-block: 6rem;
+  }
+
+  .track {
+    width: auto;
+    overflow-x: auto;
+    transform: none;
+  }
+
+  .card {
+    transform: none;
+  }
+}
