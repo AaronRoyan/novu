@@ -16,6 +16,8 @@ export type RunAnalysisOptions = {
   smoothingWindowSize?: number;
 };
 
+export type LatLng = { latitude: number; longitude: number };
+
 export type RunAnalysis = {
   distanceMeters: number;
   elapsedSeconds: number;
@@ -27,6 +29,22 @@ export type RunAnalysis = {
   elevationLossMeters: number;
   acceptedPoints: number;
   rejectedPoints: number;
+  /** The cleaned-up route (accepted, smoothed points), for drawing on a map. */
+  path: LatLng[];
+  /** Cumulative [distance meters, moving seconds] after each moving step. */
+  progress: [number, number][];
+};
+
+export type Split = {
+  km: number;
+  distanceMeters: number;
+  seconds: number;
+};
+
+export type RunSummary = Omit<RunAnalysis, 'path' | 'progress'> & {
+  /** One line per recorded segment (a pause starts a new one). */
+  path: LatLng[][];
+  splits: Split[];
 };
 
 const METERS_IN_KILOMETER = 1000;
@@ -121,6 +139,7 @@ export function analyzeRunPoints(points: RunPoint[], options: RunAnalysisOptions
   let elevationGainMeters = 0;
   let elevationLossMeters = 0;
   let pendingElevationDeltaMeters = 0;
+  const progress: [number, number][] = [[0, 0]];
 
   for (const point of sortedPoints) {
     if (!isValidPoint(point)) {
@@ -182,6 +201,7 @@ export function analyzeRunPoints(points: RunPoint[], options: RunAnalysisOptions
 
     distanceMeters += segmentDistanceMeters;
     movingSeconds += durationSeconds;
+    progress.push([distanceMeters, movingSeconds]);
 
     if (
       typeof previousSmoothedPoint.altitude === 'number' &&
@@ -219,5 +239,80 @@ export function analyzeRunPoints(points: RunPoint[], options: RunAnalysisOptions
     elevationLossMeters,
     acceptedPoints: acceptedRawPoints.length,
     rejectedPoints,
+    path: smoothedPoints.map(({ latitude, longitude }) => ({ latitude, longitude })),
+    progress,
+  };
+}
+
+/**
+ * Analyzes a run recorded in segments (a pause starts a new segment), so the
+ * time and distance across a pause are never counted. Adds per-km splits.
+ */
+export function analyzeSegments(
+  points: (RunPoint & { segment?: number })[],
+  options: RunAnalysisOptions = {},
+): RunSummary {
+  const bySegment = new Map<number, RunPoint[]>();
+  for (const point of points) {
+    const key = point.segment ?? 0;
+    const list = bySegment.get(key) ?? [];
+    list.push(point);
+    bySegment.set(key, list);
+  }
+
+  const parts = [...bySegment.keys()]
+    .sort((a, b) => a - b)
+    .map((key) => analyzeRunPoints(bySegment.get(key) ?? [], options));
+
+  const sum = (pick: (part: RunAnalysis) => number) => parts.reduce((total, part) => total + pick(part), 0);
+  const distanceMeters = sum((part) => part.distanceMeters);
+  const movingSeconds = sum((part) => part.movingSeconds);
+  const elapsedSeconds = sum((part) => part.elapsedSeconds);
+
+  // Chain each segment's cumulative progress onto the previous ones.
+  const samples: [number, number][] = [];
+  let distanceOffset = 0;
+  let secondsOffset = 0;
+  for (const part of parts) {
+    for (const [distance, seconds] of part.progress) {
+      samples.push([distance + distanceOffset, seconds + secondsOffset]);
+    }
+    distanceOffset += part.distanceMeters;
+    secondsOffset += part.movingSeconds;
+  }
+
+  const splits: Split[] = [];
+  let km = 1;
+  let lastSplitSeconds = 0;
+  for (let index = 1; index < samples.length; index++) {
+    const [previousDistance, previousSeconds] = samples[index - 1];
+    const [distance, seconds] = samples[index];
+    while (distance >= km * METERS_IN_KILOMETER) {
+      const ratio =
+        distance > previousDistance ? (km * METERS_IN_KILOMETER - previousDistance) / (distance - previousDistance) : 1;
+      const atSeconds = previousSeconds + (seconds - previousSeconds) * ratio;
+      splits.push({ km, distanceMeters: METERS_IN_KILOMETER, seconds: atSeconds - lastSplitSeconds });
+      lastSplitSeconds = atSeconds;
+      km += 1;
+    }
+  }
+  const remainder = distanceMeters - (km - 1) * METERS_IN_KILOMETER;
+  if (remainder >= 50) {
+    splits.push({ km, distanceMeters: remainder, seconds: movingSeconds - lastSplitSeconds });
+  }
+
+  return {
+    distanceMeters,
+    elapsedSeconds,
+    movingSeconds,
+    pauseSeconds: Math.max(0, elapsedSeconds - movingSeconds),
+    averagePaceSecondsPerKm: getPaceSecondsPerKm(elapsedSeconds, distanceMeters),
+    movingPaceSecondsPerKm: getPaceSecondsPerKm(movingSeconds, distanceMeters),
+    elevationGainMeters: sum((part) => part.elevationGainMeters),
+    elevationLossMeters: sum((part) => part.elevationLossMeters),
+    acceptedPoints: sum((part) => part.acceptedPoints),
+    rejectedPoints: sum((part) => part.rejectedPoints),
+    path: parts.map((part) => part.path).filter((line) => line.length > 1),
+    splits,
   };
 }

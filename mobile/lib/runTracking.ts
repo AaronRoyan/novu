@@ -1,5 +1,4 @@
-import type { LocationObject } from 'expo-location';
-
+import { getDistanceMeters, type RunPoint } from './runAnalysis';
 import { supabase } from './supabase';
 
 export type RunRecord = {
@@ -16,25 +15,34 @@ export type RunHistoryRecord = {
   duration_seconds: number;
 };
 
-type AddRunLocationParams = {
-  runId: string;
-  userId: string;
-  location: LocationObject;
-  distanceFromPreviousMeters: number;
+export type RunLocationRecord = {
+  recorded_at: string;
+  latitude: number;
+  longitude: number;
+  altitude: number | null;
+  accuracy: number | null;
+  speed: number | null;
+  heading: number | null;
 };
 
 type FinishRunParams = {
   runId: string;
   distanceMeters: number;
   durationSeconds: number;
+  endedAt: Date;
 };
 
-export async function createRun(userId: string) {
+const RUN_COLUMNS = 'id, status, started_at, ended_at, distance_meters, duration_seconds';
+
+/** Creates the run on the server. `startedAt` is when the run really began,
+ * which can be earlier if the phone was offline at the start. */
+export async function createRun(userId: string, startedAt: Date) {
   const { data, error } = await supabase
     .from('runs')
     .insert({
       user_id: userId,
       status: 'active',
+      started_at: startedAt.toISOString(),
     })
     .select('id, started_at')
     .single<RunRecord>();
@@ -46,37 +54,45 @@ export async function createRun(userId: string) {
   return data;
 }
 
-export async function addRunLocation({
-  runId,
-  userId,
-  location,
-  distanceFromPreviousMeters,
-}: AddRunLocationParams) {
-  const { coords } = location;
-  const { error } = await supabase.from('run_locations').insert({
-    run_id: runId,
-    user_id: userId,
-    recorded_at: new Date(location.timestamp).toISOString(),
-    latitude: coords.latitude,
-    longitude: coords.longitude,
-    altitude: coords.altitude,
-    accuracy: coords.accuracy,
-    speed: coords.speed,
-    heading: coords.heading,
-    distance_from_previous_meters: distanceFromPreviousMeters,
+/** Saves a batch of points in one request. `previous` is the last point
+ * already saved, so the first new point's distance can be measured from it. */
+export async function addRunLocations(
+  runId: string,
+  userId: string,
+  points: RunPoint[],
+  previous: RunPoint | null,
+) {
+  if (points.length === 0) return;
+
+  const rows = points.map((point, index) => {
+    const before = index === 0 ? previous : points[index - 1];
+    return {
+      run_id: runId,
+      user_id: userId,
+      recorded_at: new Date(point.timestamp).toISOString(),
+      latitude: point.latitude,
+      longitude: point.longitude,
+      altitude: point.altitude ?? null,
+      accuracy: point.accuracy ?? null,
+      speed: point.speed ?? null,
+      heading: point.heading ?? null,
+      distance_from_previous_meters: before ? getDistanceMeters(before, point) : 0,
+    };
   });
+
+  const { error } = await supabase.from('run_locations').insert(rows);
 
   if (error) {
     throw error;
   }
 }
 
-export async function finishRun({ runId, distanceMeters, durationSeconds }: FinishRunParams) {
+export async function finishRun({ runId, distanceMeters, durationSeconds, endedAt }: FinishRunParams) {
   const { error } = await supabase
     .from('runs')
     .update({
       status: 'completed',
-      ended_at: new Date().toISOString(),
+      ended_at: endedAt.toISOString(),
       distance_meters: distanceMeters,
       duration_seconds: durationSeconds,
     })
@@ -87,14 +103,53 @@ export async function finishRun({ runId, distanceMeters, durationSeconds }: Fini
   }
 }
 
-export async function getRecentRuns(userId: string, limit = 5) {
+export async function deleteRun(runId: string) {
+  const { error } = await supabase.from('runs').delete().eq('id', runId);
+
+  if (error) {
+    throw error;
+  }
+}
+
+export async function getRecentRuns(userId: string, limit = 10) {
   const { data, error } = await supabase
     .from('runs')
-    .select('id, status, started_at, ended_at, distance_meters, duration_seconds')
+    .select(RUN_COLUMNS)
     .eq('user_id', userId)
+    .eq('status', 'completed')
     .order('started_at', { ascending: false })
     .limit(limit)
     .returns<RunHistoryRecord[]>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data ?? [];
+}
+
+export async function getRun(runId: string) {
+  const { data, error } = await supabase
+    .from('runs')
+    .select(RUN_COLUMNS)
+    .eq('id', runId)
+    .single<RunHistoryRecord>();
+
+  if (error) {
+    throw error;
+  }
+
+  return data;
+}
+
+export async function getRunLocations(runId: string) {
+  const { data, error } = await supabase
+    .from('run_locations')
+    .select('recorded_at, latitude, longitude, altitude, accuracy, speed, heading')
+    .eq('run_id', runId)
+    .order('recorded_at', { ascending: true })
+    .limit(20000)
+    .returns<RunLocationRecord[]>();
 
   if (error) {
     throw error;

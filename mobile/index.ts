@@ -1,5 +1,9 @@
 import { registerRootComponent } from 'expo';
 
+// Defines the background location task. It has to exist before anything else
+// runs, so iOS can hand location updates to it even when the app is in the background.
+import './lib/locationTask';
+
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);

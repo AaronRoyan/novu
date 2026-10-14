@@ -1,5 +1,5 @@
+import { AppNavigator } from './AppNavigator';
 import { AuthNavigator } from './AuthNavigator';
-import { TabNavigator } from './TabNavigator';
 import { useAuth } from '../hooks/useAuth';
 import { useNetworkStatus } from '../hooks/useNetworkStatus';
 import { ErrorScreen } from '../screens/fallback/ErrorScreen';
@@ -21,5 +21,5 @@ export function RootNavigator() {
     return null;
   }
 
-  return session ? <TabNavigator /> : <AuthNavigator />;
+  return session ? <AppNavigator /> : <AuthNavigator />;
 }

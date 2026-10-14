@@ -61,4 +61,53 @@ place authentication, request limits, and TLS in front of it for production.
 npm install
 npm start
 npm run typecheck
+npm run test:tracking
 ```
+
+Create `.env` with your Supabase project before running the app:
+
+```sh
+EXPO_PUBLIC_SUPABASE_URL=https://your-project-ref.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-or-publishable-key
+```
+
+## Run recording
+
+- A run records through a background location task (`lib/locationTask.ts`),
+  so it keeps going with the screen locked or another app open. iOS shows the
+  blue location indicator while it records; "While Using" permission is enough
+  because the run is started from the app.
+- Every point is stored on the phone first (`lib/runSession.ts`) and uploaded
+  in batches when there is a connection (`lib/runSync.ts`). A dead zone, or
+  finishing a run offline, loses nothing: it uploads later.
+- Pause and resume start a new segment, so paused time and any distance
+  covered while paused are not counted.
+- If the app is closed mid-run, reopening it restores the run and resumes.
+- Finished runs open a detail screen with the route map, splits per km,
+  moving time and elevation (`screens/runs/RunDetailScreen.tsx`).
+
+Background location and maps need a development build (not Expo Go).
+
+## Run on an iPhone
+
+This Mac's Xcode lives on the external volume and the system disk is nearly
+full, so build with Xcode's caches kept on the external volume:
+
+```sh
+export DEVELOPER_DIR=/Volumes/volume/Applications/Xcode.app/Contents/Developer
+npx expo prebuild --platform ios --no-install
+(cd ios && CP_CACHE_DIR=/Volumes/volume/.cocoapods-cache CP_HOME_DIR=/Volumes/volume/.cocoapods pod install)
+
+# Find the phone's id with: xcrun devicectl list devices
+xcodebuild -workspace ios/Novu.xcworkspace -scheme Novu -configuration Debug \
+  -destination id=<device-id> -derivedDataPath ios/build -allowProvisioningUpdates build
+xcrun devicectl device install app --device <device-id> \
+  ios/build/Build/Products/Debug-iphoneos/Novu.app
+
+npm start   # the Debug build loads its JavaScript from here over Wi-Fi
+```
+
+Use `-configuration Release` (and `Release-iphoneos` in the install path) for
+a build that runs without the Mac, e.g. to test a real run outdoors. Builds
+signed with a free Apple ID (Personal Team) stop opening after 7 days; rebuild
+to refresh, or join the Apple Developer Program.
