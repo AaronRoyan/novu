@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { type CSSProperties, useEffect, useState } from 'react';
+import { type CSSProperties, useEffect, useRef, useState } from 'react';
 
 import { contactEmail, instagramHandle, links } from '@/lib/site';
 
@@ -20,6 +20,8 @@ export function Nav() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     let lastY = window.scrollY;
@@ -46,12 +48,22 @@ export function Nav() {
   useEffect(() => {
     if (!open) return;
     const root = document.documentElement;
+    const toggle = toggleRef.current;
     root.style.overflow = 'hidden';
+
+    // The menu covers the page: make what's behind it inert so Tab stays in
+    // the header, and start keyboard focus on the first menu link.
+    const behind = document.querySelectorAll<HTMLElement>('main, footer');
+    behind.forEach((el) => el.setAttribute('inert', ''));
+    menuRef.current?.querySelector<HTMLElement>('a')?.focus();
+
     const onKey = (event: KeyboardEvent) => event.key === 'Escape' && setOpen(false);
     window.addEventListener('keydown', onKey);
     return () => {
       root.style.overflow = '';
+      behind.forEach((el) => el.removeAttribute('inert'));
       window.removeEventListener('keydown', onKey);
+      toggle?.focus();
     };
   }, [open]);
 
@@ -90,6 +102,7 @@ export function Nav() {
             Shop <span className="arrow">→</span>
           </Link>
           <button
+            ref={toggleRef}
             type="button"
             className={styles.toggle}
             aria-expanded={open}
@@ -103,7 +116,7 @@ export function Nav() {
         </div>
       </div>
 
-      <div id="site-menu" className={styles.menu} hidden={!open}>
+      <div ref={menuRef} id="site-menu" className={styles.menu} hidden={!open}>
         <nav aria-label="Mobile" className={styles.menuLinks}>
           {items.map((item, index) =>
             item.external ? (

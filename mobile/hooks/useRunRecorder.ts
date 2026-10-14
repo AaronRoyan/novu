@@ -200,18 +200,22 @@ export function useRunRecorder() {
   const resume = useCallback(async () => {
     if (status !== 'paused') return;
     const resumedAt = Date.now();
+
+    // Start tracking first: if it fails, the run stays paused rather than
+    // claiming to record while no points arrive.
+    try {
+      await startRunTracking();
+    } catch (resumeError) {
+      setError(normalizeError(resumeError));
+      return;
+    }
+
     const next = await updateActiveRun((current) => ({
       status: 'recording',
       pausedMs: current.pausedMs + (current.pausedAt ? resumedAt - current.pausedAt : 0),
       pausedAt: null,
       segment: current.segment + 1,
     }));
-
-    try {
-      await startRunTracking();
-    } catch (resumeError) {
-      setError(normalizeError(resumeError));
-    }
     setRun(next);
     setNow(resumedAt);
     setStatus('recording');

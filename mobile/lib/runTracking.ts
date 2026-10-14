@@ -55,7 +55,9 @@ export async function createRun(userId: string, startedAt: Date) {
 }
 
 /** Saves a batch of points in one request. `previous` is the last point
- * already saved, so the first new point's distance can be measured from it. */
+ * already saved, so the first new point's distance can be measured from it.
+ * Points already on the server (same run and timestamp) are skipped, so a
+ * batch retried after a lost response never creates duplicates. */
 export async function addRunLocations(
   runId: string,
   userId: string,
@@ -80,7 +82,9 @@ export async function addRunLocations(
     };
   });
 
-  const { error } = await supabase.from('run_locations').insert(rows);
+  const { error } = await supabase
+    .from('run_locations')
+    .upsert(rows, { onConflict: 'run_id,recorded_at', ignoreDuplicates: true });
 
   if (error) {
     throw error;

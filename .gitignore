@@ -1,6 +1,14 @@
 # Each app keeps its own .gitignore; these apply repo-wide.
 node_modules/
 .DS_Store
+
+# Signing keys and certificates
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
 .env
 .env.*
 !.env.example

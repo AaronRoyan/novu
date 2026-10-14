@@ -38,6 +38,7 @@ export function WaitlistForm() {
           className={styles.input}
           aria-describedby="waitlist-note"
           aria-invalid={state.status === 'error' || undefined}
+          aria-errormessage={state.status === 'error' ? 'waitlist-note' : undefined}
         />
         <button type="submit" className="btn btn--accent" disabled={pending}>
           {pending ? 'Joining…' : 'Join the waitlist'}

@@ -3,6 +3,7 @@ import { clearActiveRun, getActiveRun, getSessionPoints, updateActiveRun } from 
 
 const BATCH_SIZE = 200;
 const MIN_INTERVAL_MS = 15_000;
+const MAX_DRAIN_ATTEMPTS = 3;
 
 let inFlight: Promise<void> | null = null;
 let lastAttempt = 0;
@@ -51,7 +52,7 @@ export function syncActiveRun({ force = false } = {}) {
  * server id, or throws (e.g. offline) and leaves everything to retry later.
  */
 export async function completeFinishedRun() {
-  await syncActiveRun({ force: true });
+  await uploadEverything();
   const run = await getActiveRun();
   if (!run || run.status !== 'finishing' || !run.runId || run.endedAt === null) {
     throw new Error('There is no finished run to save.');
@@ -65,6 +66,21 @@ export async function completeFinishedRun() {
   });
   await clearActiveRun();
   return run.runId;
+}
+
+/**
+ * Uploads until the server has every stored point. An upload already in
+ * flight may have read the points before the last ones were stored, so wait
+ * for it and upload again rather than trusting it.
+ */
+async function uploadEverything() {
+  for (let attempt = 0; attempt < MAX_DRAIN_ATTEMPTS; attempt++) {
+    if (inFlight) await inFlight.catch(() => undefined);
+    await syncActiveRun({ force: true });
+    const [run, points] = await Promise.all([getActiveRun(), getSessionPoints()]);
+    if (run?.runId && run.uploadedPoints >= points.length) return;
+  }
+  throw new Error('Some points are not uploaded yet.');
 }
 
 /** Throws away the run in progress, including anything already uploaded. */
